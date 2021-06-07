@@ -21,10 +21,10 @@ namespace shared_model {
         const {
       return account_transactions_.account_id();
     }
-    const interface::types::TimestampType &GetAccountTransactions::timeInt()
-        const {
-      return account_transactions_.account_id();
-    }
+//    const interface::types::TimestampType &GetAccountTransactions::timeBegin()
+//        const {
+//      return account_transactions_.timeBegin();
+//    }
     const interface::TxPaginationMeta &GetAccountTransactions::paginationMeta()
         const {
       return pagination_meta_;

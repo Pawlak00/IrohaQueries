@@ -33,6 +33,14 @@ std::optional<types::HashType> TxPaginationMeta::firstTxHash() const {
   }
   return types::HashType::fromHexString(meta_.first_tx_hash());
 }
+// change to optional
+types::TimestampType TxPaginationMeta::firstTimeStamp() const {
+  return meta_.first_time_stamp();
+}
+
+types::TimestampType TxPaginationMeta::lastTimeStamp() const {
+  return meta_.last_time_stamp();
+}
 
 shared_model::interface::Ordering const &TxPaginationMeta::ordering() const {
   return ordering_;
