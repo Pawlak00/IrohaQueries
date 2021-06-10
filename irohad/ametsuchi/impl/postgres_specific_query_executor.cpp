@@ -488,6 +488,7 @@ namespace iroha {
       return executeQuery<QueryTuple, PermissionTuple>(
           applier(query),
           query_hash,
+          //till this line is everything we need
           [&](auto range, auto &) {
             auto range_without_nulls = resultWithoutNulls(std::move(range));
             uint64_t total_size = 0;
@@ -720,28 +721,38 @@ namespace iroha {
       // modify here to apply timestamps
       char const *related_txs = R"(
           creator_id = :account_id
-          AND asset_id IS NULL AND ts BETWEEN 1623345161745 AND 1623345171352
+          AND asset_id IS NULL 
+          AND ts BETWEEN :first_tx AND :last_tx
       )";
-
+      /*
+      Czy dane z proto przesyłać jako string czy zrobić własny typ?
+      Czy trzeba je zmieniac z stringa na inta czy może być string
+      */
       const auto &pagination_info = q.paginationMeta();
       auto first_hash = pagination_info.firstTxHash();
       // retrieve one extra transaction to populate next_hash
       auto query_size = pagination_info.pageSize() + 1u;
       auto first_tx_time=pagination_info.firstTxTime();
       auto last_tx_time=pagination_info.lastTxTime();
-      std::cout<<std::string(first_tx_time->c_str())<<" dupa "<<std::string(last_tx_time->c_str())<<std::endl;
+      std::cout<<std::string(first_tx_time->c_str())<<" ##### "<<std::string(last_tx_time->c_str())<<std::endl;
       auto apply_query = [&](const auto &query) {
         return [&] {
-          if (first_hash) {
+          //bad solution rather
+          if (first_hash && first_tx_time && last_tx_time) {
             return (sql_ .prepare << query,
                     soci::use(q.accountId()),
                     soci::use(first_hash->hex()),
+                    soci::use(first_tx_time),
+                    soci::use(last_tx_time),
                     soci::use(query_size));
           } else {
             return (sql_.prepare << query,
                     soci::use(q.accountId()),
+                    soci::use(first_tx_time),
+                    soci::use(last_tx_time),
                     soci::use(query_size));
           }
+         
         };
       };
 
