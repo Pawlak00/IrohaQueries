@@ -31,7 +31,27 @@ std::optional<types::HashType> TxPaginationMeta::firstTxHash() const {
   }
   return types::HashType::fromHexString(meta_.first_tx_hash());
 }
-
+//////////////// added by me
+std::optional<std::string> TxPaginationMeta::firstTxTime() const {
+  // if (meta_.opt_first_tx_time()
+  //     == iroha::protocol::TxPaginationMeta::OptFirstTxHashCase::
+  //            OPT_FIRST_TX_HASH_NOT_SET) {
+  //   return std::nullopt;
+  // }
+  //find function to convert to string
+  return meta_.first_tx_time();
+}
+std::optional<std::string> TxPaginationMeta::lastTxTime() const {
+  //verification should be added
+  // if (meta_.opt_first_tx_time()
+  //     == iroha::protocol::TxPaginationMeta::OptFirstTxHashCase::
+  //            OPT_FIRST_TX_HASH_NOT_SET) {
+  //   return std::nullopt;
+  // }
+  //that is a bad solution, converting function for this Type should be written
+  return meta_.last_tx_time();
+}
+////
 shared_model::interface::Ordering const &TxPaginationMeta::ordering() const {
   return ordering_;
 }

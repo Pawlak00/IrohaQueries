@@ -97,7 +97,7 @@ namespace shared_model {
       using CommandIndexType = int32_t;
       /// Transaction index type
       using TxIndexType = int32_t;
-
+      
       enum class BatchType { ATOMIC = 0, ORDERED = 1 };
 
     }  // namespace types

@@ -24,6 +24,8 @@ namespace shared_model {
       interface::types::TransactionsNumberType pageSize() const override;
 
       std::optional<interface::types::HashType> firstTxHash() const override;
+      std::optional<std::string> firstTxTime() const override;
+      std::optional<std::string> lastTxTime() const override;
       interface::Ordering const &ordering() const override;
 
      private:
