@@ -23,9 +23,6 @@ namespace shared_model {
 
       /// Get the first requested transaction hash, if provided.
       virtual std::optional<types::HashType> firstTxHash() const = 0;
-      // change to optional
-      virtual types::TimestampType firstTimeStamp() const = 0;
-      virtual types::TimestampType lastTimeStamp() const = 0;
       virtual Ordering const &ordering() const = 0;
 
       std::string toString() const override;

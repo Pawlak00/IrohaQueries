@@ -33,12 +33,7 @@ message TxPaginationMeta {
   oneof opt_first_tx_hash {
     string first_tx_hash = 2;
   }
-  // time stamp of first transaction(lower bound)
-  // TODO change to optional both
-  uint64 first_time_stamp = 3;
-  // time stamp of last transaction(upper bound)
-  uint64 last_time_stamp = 4;
-  Ordering ordering = 5;
+  Ordering ordering = 3;
 }
 
 message AssetPaginationMeta {
@@ -62,7 +57,7 @@ message GetSignatories {
 
 message GetAccountTransactions {
   string account_id = 1;
-  TxPaginationMeta pagination_meta = 4;
+  TxPaginationMeta pagination_meta = 2;
 }
 
 message GetAccountAssetTransactions {

@@ -7,7 +7,9 @@
 
 #include <tuple>
 #include <unordered_map>
+// for debug purpose
 #include <iostream>
+
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/range/adaptor/filtered.hpp>
@@ -445,7 +447,7 @@ namespace iroha {
       auto first_hash = pagination_info.firstTxHash();
       // retrieve one extra transaction to populate next_hash
       auto query_size = pagination_info.pageSize() + 1u;
-      std::cout<<"Im executing this cool query"<<std::endl;
+
       char const *base = R"(WITH
                {0},
                my_txs AS (
@@ -454,6 +456,7 @@ namespace iroha {
                  WHERE
                  {2} -- related_txs
                  {1} -- ordering
+                 --TRANSACTION1
                  ),
                total_size AS (SELECT COUNT(*) FROM my_txs) {3}
                SELECT my_txs.height, my_txs.index, count, perm FROM my_txs
@@ -481,7 +484,7 @@ namespace iroha {
                ? R"(, base_row AS(SELECT row FROM my_txs WHERE hash = lower(:hash) LIMIT 1))"
                : ""),
           (first_hash ? R"(JOIN base_row ON my_txs.row >= base_row.row)" : ""));
-
+      std::cout<<"query in line 487"<<query<<std::endl;
       return executeQuery<QueryTuple, PermissionTuple>(
           applier(query),
           query_hash,
@@ -714,9 +717,10 @@ namespace iroha {
         const shared_model::interface::GetAccountTransactions &q,
         const shared_model::interface::types::AccountIdType &creator_id,
         const shared_model::interface::types::HashType &query_hash) {
+      // modify here to apply timestamps
       char const *related_txs = R"(
           creator_id = :account_id
-          AND asset_id IS NULL
+          AND asset_id IS NULL AND ts BETWEEN 1623345161745 AND 1623345171352
       )";
 
       const auto &pagination_info = q.paginationMeta();
@@ -727,7 +731,7 @@ namespace iroha {
       auto apply_query = [&](const auto &query) {
         return [&] {
           if (first_hash) {
-            return (sql_.prepare << query,
+            return (sql_ .prepare << query,
                     soci::use(q.accountId()),
                     soci::use(first_hash->hex()),
                     soci::use(query_size));
@@ -747,6 +751,9 @@ namespace iroha {
         return QueryFallbackCheckResult{
             5, "no account with such id found: " + q.accountId()};
       };
+      std::cout<<"executing query and getting to Transaction Query, all modifications should be here"<<std::endl;
+      // std::cout<<q<<std::endl;
+      std::cout<<related_txs<<std::endl;
 
       return executeTransactionsQuery(q,
                                       creator_id,
@@ -778,6 +785,7 @@ namespace iroha {
       has_all_perm AS ({}),
       t AS (
           SELECT DISTINCT height, hash FROM tx_positions WHERE hash IN ({})
+          --TRANSACTION2
       )
       SELECT height, hash, has_my_perm.perm, has_all_perm.perm FROM t
       RIGHT OUTER JOIN has_my_perm ON TRUE
@@ -786,7 +794,7 @@ namespace iroha {
           getAccountRolePermissionCheckSql(Role::kGetMyTxs, ":account_id"),
           getAccountRolePermissionCheckSql(Role::kGetAllTxs, ":account_id"),
           hash_str);
-
+      std::cout<<"query in line 793"<<cmd<<std::endl;
       return executeQuery<QueryTuple, PermissionTuple>(
           [&] {
             return (sql_.prepare << cmd, soci::use(creator_id, "account_id"));
@@ -1484,7 +1492,8 @@ namespace iroha {
               target as (
                 select distinct creator_id as t
                 from tx_positions
-                where hash=lower(:tx_hash)
+                where hash=lower(:tx_hash) 
+                --TRANSACTION3
               ),
               {}
             select
@@ -1510,7 +1519,7 @@ namespace iroha {
                                      Role::kGetMyEngineReceipts,
                                      Role::kGetAllEngineReceipts,
                                      Role::kGetDomainEngineReceipts));
-
+      std::cout<<"query in line 1518"<<cmd<<std::endl;
       using QueryTuple =
           QueryType<shared_model::interface::types::CommandIndexType,
                     shared_model::interface::types::AccountIdType,

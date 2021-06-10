@@ -9,9 +9,7 @@
 #include "cryptography/hash.hpp"
 
 namespace types = shared_model::interface::types;
-//
-//edit model of pagination here
-//
+
 using namespace shared_model::proto;
 
 TxPaginationMeta::TxPaginationMeta(iroha::protocol::TxPaginationMeta &meta)
@@ -32,14 +30,6 @@ std::optional<types::HashType> TxPaginationMeta::firstTxHash() const {
     return std::nullopt;
   }
   return types::HashType::fromHexString(meta_.first_tx_hash());
-}
-// change to optional
-types::TimestampType TxPaginationMeta::firstTimeStamp() const {
-  return meta_.first_time_stamp();
-}
-
-types::TimestampType TxPaginationMeta::lastTimeStamp() const {
-  return meta_.last_time_stamp();
 }
 
 shared_model::interface::Ordering const &TxPaginationMeta::ordering() const {
