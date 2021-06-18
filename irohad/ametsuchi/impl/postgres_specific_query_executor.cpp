@@ -447,7 +447,8 @@ namespace iroha {
       auto first_hash = pagination_info.firstTxHash();
       // retrieve one extra transaction to populate next_hash
       auto query_size = pagination_info.pageSize() + 1u;
-
+      auto first_tx_time=pagination_info.firstTxTime();
+      auto last_tx_time=pagination_info.lastTxTime();
       char const *base = R"(WITH
                {0},
                my_txs AS (
@@ -455,6 +456,8 @@ namespace iroha {
                  FROM tx_positions
                  WHERE
                  {2} -- related_txs
+                 {5} -- time interval begin
+                 {6} -- time interval end
                  {1} -- ordering
                  --TRANSACTION1
                  ),
@@ -474,7 +477,7 @@ namespace iroha {
                                                1,
                                                query_hash);
       }
-
+  //try modyfing here
       auto query = fmt::format(
           base,
           hasQueryPermissionTarget(creator_id, q.accountId(), perms...),
@@ -483,8 +486,16 @@ namespace iroha {
           (first_hash
                ? R"(, base_row AS(SELECT row FROM my_txs WHERE hash = lower(:hash) LIMIT 1))"
                : ""),
-          (first_hash ? R"(JOIN base_row ON my_txs.row >= base_row.row)" : ""));
-      std::cout<<"query in line 487"<<query<<std::endl;
+          (first_hash ? R"(JOIN base_row ON my_txs.row >= base_row.row)" : ""),
+          (first_tx_time
+               ? "AND :first_tx<ts" 
+               : ""
+          ),
+          (last_tx_time
+              ? "AND :last_tx>ts" 
+               : ""
+          ));
+      std::cout<<"query in line 487 "<<query<<std::endl;
       return executeQuery<QueryTuple, PermissionTuple>(
           applier(query),
           query_hash,
@@ -718,41 +729,66 @@ namespace iroha {
         const shared_model::interface::GetAccountTransactions &q,
         const shared_model::interface::types::AccountIdType &creator_id,
         const shared_model::interface::types::HashType &query_hash) {
-      // modify here to apply timestamps
       char const *related_txs = R"(
           creator_id = :account_id
           AND asset_id IS NULL 
-          AND ts BETWEEN :first_tx AND :last_tx
       )";
-      /*
-      Czy dane z proto przesyłać jako string czy zrobić własny typ?
-      Czy trzeba je zmieniac z stringa na inta czy może być string
-      */
+      //what is socii:use passed nullopt returning? rather not null
+
+
       const auto &pagination_info = q.paginationMeta();
       auto first_hash = pagination_info.firstTxHash();
-      // retrieve one extra transaction to populate next_hash
       auto query_size = pagination_info.pageSize() + 1u;
       auto first_tx_time=pagination_info.firstTxTime();
       auto last_tx_time=pagination_info.lastTxTime();
-      std::cout<<std::string(first_tx_time->c_str())<<" ##### "<<std::string(last_tx_time->c_str())<<std::endl;
       auto apply_query = [&](const auto &query) {
         return [&] {
-          //bad solution rather
-          if (first_hash && first_tx_time && last_tx_time) {
+          //we need all ifs :( find better way to do it 
+          if (first_hash && last_tx_time) {
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(first_hash->hex()),
+                    soci::use(last_tx_time),
+                    soci::use(query_size));
+          } else if (first_hash && first_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(first_hash->hex()),
+                    soci::use(first_tx_time),
+                    soci::use(query_size));
+          } else if (first_hash && first_tx_time && last_tx_time){
             return (sql_ .prepare << query,
                     soci::use(q.accountId()),
                     soci::use(first_hash->hex()),
                     soci::use(first_tx_time),
                     soci::use(last_tx_time),
                     soci::use(query_size));
-          } else {
-            return (sql_.prepare << query,
+          }else if (first_tx_time && last_tx_time){
+            return (sql_ .prepare << query,
                     soci::use(q.accountId()),
                     soci::use(first_tx_time),
                     soci::use(last_tx_time),
                     soci::use(query_size));
+          }else if (last_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(last_tx_time),
+                    soci::use(query_size));
+          }else if ( first_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(first_tx_time),
+                    soci::use(query_size));
+          }else if (first_hash){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(first_hash->hex()),
+                    soci::use(query_size));
+          }else {
+            return (sql_.prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(query_size));
           }
-         
         };
       };
 
@@ -764,10 +800,7 @@ namespace iroha {
         return QueryFallbackCheckResult{
             5, "no account with such id found: " + q.accountId()};
       };
-      std::cout<<"executing query and getting to Transaction Query, all modifications should be here"<<std::endl;
-      // std::cout<<q<<std::endl;
-      std::cout<<related_txs<<std::endl;
-
+      
       return executeTransactionsQuery(q,
                                       creator_id,
                                       query_hash,
@@ -875,16 +908,58 @@ namespace iroha {
       auto first_hash = pagination_info.firstTxHash();
       // retrieve one extra transaction to populate next_hash
       auto query_size = pagination_info.pageSize() + 1u;
-
+      auto first_tx_time=pagination_info.firstTxTime();
+      auto last_tx_time=pagination_info.lastTxTime();
       auto apply_query = [&](const auto &query) {
         return [&] {
-          if (first_hash) {
-            return (sql_.prepare << query,
+           if (first_hash && last_tx_time) {
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(q.assetId()),
+                    soci::use(first_hash->hex()),
+                    soci::use(last_tx_time),
+                    soci::use(query_size));
+          } else if (first_hash && first_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(q.assetId()),
+                    soci::use(first_hash->hex()),
+                    soci::use(first_tx_time),
+                    soci::use(query_size));
+          } else if (first_hash && first_tx_time && last_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(q.assetId()),
+                    soci::use(first_hash->hex()),
+                    soci::use(first_tx_time),
+                    soci::use(last_tx_time),
+                    soci::use(query_size));
+          }else if (first_tx_time && last_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(q.assetId()),
+                    soci::use(first_tx_time),
+                    soci::use(last_tx_time),
+                    soci::use(query_size));
+          }else if (last_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(q.assetId()),
+                    soci::use(last_tx_time),
+                    soci::use(query_size));
+          }else if ( first_tx_time){
+            return (sql_ .prepare << query,
+                    soci::use(q.accountId()),
+                    soci::use(q.assetId()),
+                    soci::use(first_tx_time),
+                    soci::use(query_size));
+          }else if (first_hash){
+            return (sql_ .prepare << query,
                     soci::use(q.accountId()),
                     soci::use(q.assetId()),
                     soci::use(first_hash->hex()),
                     soci::use(query_size));
-          } else {
+          }else {
             return (sql_.prepare << query,
                     soci::use(q.accountId()),
                     soci::use(q.assetId()),

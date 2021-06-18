@@ -4,7 +4,7 @@
  */
 
 #include "ametsuchi/impl/postgres_query_executor.hpp"
-
+#include <iostream>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/size.hpp>
 #include "ametsuchi/specific_query_executor.hpp"

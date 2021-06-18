@@ -57,13 +57,19 @@ After ordering is specified, pagination can be executed:
 
 .. code-block:: proto
 
-    message TxPaginationMeta {
-        uint32 page_size = 1;
-        oneof opt_first_tx_hash {
-            string first_tx_hash = 2;
-        }
-        Ordering ordering = 3;
-    }
+	message TxPaginationMeta {
+	  uint32 page_size = 1;
+	  oneof opt_first_tx_hash {
+	    string first_tx_hash = 2;
+	  }
+	  oneof opt_first_tx_time {
+	    string first_tx_time = 3;
+	  }
+	  oneof opt_last_tx_time {
+	    string last_tx_time = 4;
+	  }
+	  Ordering ordering = 5;
+	}
 
 What is added to the request structure in case of pagination
 ------------------------------------------------------------
@@ -74,6 +80,8 @@ What is added to the request structure in case of pagination
 
     "Page size", "size of the page to be returned by the query, if the response contains fewer transactions than a page size, then next tx hash will be empty in response", "page_size > 0", "5"
     "First tx hash", "hash of the first transaction in the page. If that field is not set — then the first transactions are returned", "hash in hex format", "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929"
+    "first_tx_time","time of first transaction","integer","1623402634722"
+    "last_tx_time","time of last transaction","integer","1623402634722"
     "ordering", "how the results should be ordered (before pagination is applied)", "see fields below", "see fields below"
     "ordering.sequence", "ordeing spec, like in SQL ORDER BY", "sequence of fields and directions", "[{kCreatedTime, kAscending}, {kPosition, kDescending}]"
 

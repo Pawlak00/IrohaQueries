@@ -23,6 +23,7 @@ namespace {
             {"First tx hash from pagination meta is not a hex string."}};
       }
     }
+    //validation to add here for timestamps
     return std::nullopt;
   }
 }  // namespace

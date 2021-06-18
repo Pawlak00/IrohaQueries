@@ -60,6 +60,5 @@ PostgresSettingQuery::update(
   } catch (std::exception &e) {
     return expected::makeError(e.what());
   }
-
   return base;
 }
